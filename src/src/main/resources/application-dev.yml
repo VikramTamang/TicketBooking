@@ -5,6 +5,18 @@ spring:
     password: WJ28@krhps
     driver-class-name: com.mysql.cj.jdbc.Driver
 
+  mail:
+    host: smtp.example.com
+    port: 587
+    username: ${subastv.04@gmail.com:}
+    password: ${Center$lifeimp04:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
   jpa:
     hibernate:
       ddl-auto: update
@@ -26,3 +38,13 @@ security:
     max-failed-attempts: 5
     lockout-duration-minutes: 15
     pending-auth-ttl-minutes: 5
+
+otp:
+  # DEV ONLY. In production this MUST come from an environment variable
+  # (Phase 37) and must be a long, random, unguessable value. Never commit
+  # a real production secret to source control.
+  secret: "dev-only-otp-hmac-secret-change-me-32bytes-min"
+  expiry-minutes: 5
+  max-attempts: 5
+  resend-cooldown-seconds: 60
+

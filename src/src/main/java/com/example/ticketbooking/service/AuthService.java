@@ -31,6 +31,7 @@ public class AuthService {
     private final PendingAuthSessionRepository pendingAuthSessionRepository;
     private final PasswordService passwordService;
     private final SecurityEventLogger securityEventLogger;
+    private final OtpService otpService;
 
     @Value("${security.login.max-failed-attempts:5}")
     private int maxFailedAttempts;
@@ -41,24 +42,19 @@ public class AuthService {
     @Value("${security.login.pending-auth-ttl-minutes:5}")
     private long pendingAuthTtlMinutes;
 
-    /**
-     * A fixed, valid-looking BCrypt hash of a value nobody will ever guess.
-     * Used only to run a "dummy" password comparison when the email doesn't
-     * exist, so that the response time for "unknown email" and "wrong
-     * password for a real account" is similar — reduces (does not fully
-     * eliminate) the ability to enumerate valid emails via timing.
-     */
     private static final String DUMMY_HASH =
             "$2a$10$C6UzMDM.H6dfI/f/IKcEeO6Zu5ZqQ7vX0G9V0aFhtY.tzWFoR6H3q";
 
     public AuthService(UserRepository userRepository,
                        PendingAuthSessionRepository pendingAuthSessionRepository,
                        PasswordService passwordService,
-                       SecurityEventLogger securityEventLogger) {
+                       SecurityEventLogger securityEventLogger,
+                       OtpService otpService) {
         this.userRepository = userRepository;
         this.pendingAuthSessionRepository = pendingAuthSessionRepository;
         this.passwordService = passwordService;
         this.securityEventLogger = securityEventLogger;
+        this.otpService = otpService;
     }
 
     @Transactional
@@ -90,8 +86,6 @@ public class AuthService {
         Optional<User> userOpt = userRepository.findByEmail(normalizedEmail);
 
         if (userOpt.isEmpty()) {
-            // Run a dummy hash comparison so response timing doesn't
-            // obviously differ from the "wrong password" path below.
             passwordService.matches(request.getPassword(), DUMMY_HASH);
             securityEventLogger.loginFailure(normalizedEmail, "EMAIL_NOT_FOUND");
             throw new InvalidCredentialsException();
@@ -117,9 +111,6 @@ public class AuthService {
             throw new InvalidCredentialsException();
         }
 
-        // Successful password verification: reset lockout counters,
-        // but DO NOT issue a JWT here. Only create the temporary
-        // pre-auth state, per Section 7's non-negotiable rule.
         user.setFailedLoginAttempts(0);
         user.setLockedUntil(null);
         userRepository.save(user);
@@ -128,6 +119,9 @@ public class AuthService {
         Instant expiresAt = Instant.now().plus(pendingAuthTtlMinutes, ChronoUnit.MINUTES);
         PendingAuthSession session = new PendingAuthSession(token, user, expiresAt);
         pendingAuthSessionRepository.save(session);
+
+        // Generate and "send" the OTP for this session (Phase 6).
+        otpService.generateAndSendOtp(session);
 
         securityEventLogger.loginSuccess(normalizedEmail);
 

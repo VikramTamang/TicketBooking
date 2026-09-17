@@ -11,16 +11,6 @@ import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.Instant;
 
-/**
- * Represents the "temporary authentication state" required by Section 7:
- * created after password verification succeeds, but BEFORE 2FA/JWT.
- * This token grants NO API access on its own — Phase 6/7 will only accept
- * it as input to the OTP-verification endpoint, never as a Bearer token.
- *
- * Cleanup of expired rows is handled by a scheduled job in Phase 24;
- * until then, expiry is enforced logically (checked at read time) even
- * if the row still physically exists in the table.
- */
 @Entity
 @Table(name = "pending_auth_sessions")
 public class PendingAuthSession {
@@ -36,12 +26,19 @@ public class PendingAuthSession {
     @Column(nullable = false)
     private Instant expiresAt;
 
-    /**
-     * Set true once consumed by OTP verification (Phase 6), so a
-     * pre-auth token can never be reused even if not yet expired.
-     */
     @Column(nullable = false)
     private boolean used = false;
+
+    /**
+     * Set true only after successful OTP verification (Phase 6).
+     * Phase 7's JWT-issuance endpoint will require this to be true
+     * before it will issue a token, and will then set `used = true`.
+     * A session can never reach `used = true` without first passing
+     * through `otpVerified = true` — the JWT code path structurally
+     * cannot be reached by password verification alone.
+     */
+    @Column(nullable = false)
+    private boolean otpVerified = false;
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
@@ -74,6 +71,14 @@ public class PendingAuthSession {
 
     public void setUsed(boolean used) {
         this.used = used;
+    }
+
+    public boolean isOtpVerified() {
+        return otpVerified;
+    }
+
+    public void setOtpVerified(boolean otpVerified) {
+        this.otpVerified = otpVerified;
     }
 
     public Instant getCreatedAt() {

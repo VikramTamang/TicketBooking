@@ -48,6 +48,31 @@ public class GlobalExceptionHandler {
         return errorResponse(HttpStatus.LOCKED, ex.getMessage(), "ACCOUNT_LOCKED");
     }
 
+    @ExceptionHandler(PendingAuthSessionInvalidException.class)
+    public ResponseEntity<Map<String, Object>> handlePendingSessionInvalid(PendingAuthSessionInvalidException ex) {
+        return errorResponse(HttpStatus.UNAUTHORIZED, ex.getMessage(), "SESSION_INVALID");
+    }
+
+    @ExceptionHandler(OtpInvalidException.class)
+    public ResponseEntity<Map<String, Object>> handleOtpInvalid(OtpInvalidException ex) {
+        return errorResponse(HttpStatus.BAD_REQUEST, ex.getMessage(), "OTP_INVALID");
+    }
+
+    @ExceptionHandler(OtpExpiredException.class)
+    public ResponseEntity<Map<String, Object>> handleOtpExpired(OtpExpiredException ex) {
+        return errorResponse(HttpStatus.BAD_REQUEST, ex.getMessage(), "OTP_EXPIRED");
+    }
+
+    @ExceptionHandler(OtpMaxAttemptsExceededException.class)
+    public ResponseEntity<Map<String, Object>> handleOtpMaxAttempts(OtpMaxAttemptsExceededException ex) {
+        return errorResponse(HttpStatus.TOO_MANY_REQUESTS, ex.getMessage(), "OTP_MAX_ATTEMPTS_EXCEEDED");
+    }
+
+    @ExceptionHandler(OtpResendCooldownException.class)
+    public ResponseEntity<Map<String, Object>> handleOtpResendCooldown(OtpResendCooldownException ex) {
+        return errorResponse(HttpStatus.TOO_MANY_REQUESTS, ex.getMessage(), "OTP_RESEND_COOLDOWN");
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleGeneric(Exception ex) {
         return errorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred", "INTERNAL_ERROR");
