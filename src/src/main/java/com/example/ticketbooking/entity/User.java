@@ -14,7 +14,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.time.Instant;
 
 @Entity
-@Table(name = "users") // "user" is a reserved word in some SQL dialects; "users" avoids that entirely
+@Table(name = "users")
 public class User {
 
     @Id
@@ -27,11 +27,6 @@ public class User {
     @Column(nullable = false, unique = true)
     private String email;
 
-    /**
-     * Stores the BCrypt hash only — never plaintext.
-     * Named "passwordHash" rather than "password" so it's obvious at every
-     * call site that this is not a raw credential.
-     */
     @Column(nullable = false)
     private String passwordHash;
 
@@ -46,6 +41,20 @@ public class User {
     @Column(nullable = false)
     private AccountStatus accountStatus;
 
+    /**
+     * Brute-force protection (Phase 5). Reset to 0 on successful password
+     * verification. Incremented on each failed attempt.
+     */
+    @Column(nullable = false)
+    private int failedLoginAttempts = 0;
+
+    /**
+     * Null when not locked. Set to a future timestamp after too many
+     * failed attempts; login is rejected while lockedUntil is in the future.
+     */
+    @Column
+    private Instant lockedUntil;
+
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
     private Instant createdAt;
@@ -55,7 +64,6 @@ public class User {
     private Instant updatedAt;
 
     protected User() {
-        // required by JPA
     }
 
     public User(String name, String email, String passwordHash, String phoneNumber,
@@ -118,6 +126,22 @@ public class User {
 
     public void setAccountStatus(AccountStatus accountStatus) {
         this.accountStatus = accountStatus;
+    }
+
+    public int getFailedLoginAttempts() {
+        return failedLoginAttempts;
+    }
+
+    public void setFailedLoginAttempts(int failedLoginAttempts) {
+        this.failedLoginAttempts = failedLoginAttempts;
+    }
+
+    public Instant getLockedUntil() {
+        return lockedUntil;
+    }
+
+    public void setLockedUntil(Instant lockedUntil) {
+        this.lockedUntil = lockedUntil;
     }
 
     public Instant getCreatedAt() {

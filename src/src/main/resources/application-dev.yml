@@ -22,3 +22,7 @@ logging:
 security:
   password:
     bcrypt-strength: 10
+  login:
+    max-failed-attempts: 5
+    lockout-duration-minutes: 15
+    pending-auth-ttl-minutes: 5

@@ -9,16 +9,6 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-/**
- * Minimal exception handling for Phase 3. This will be significantly
- * expanded in Phase 10 (Global Exception Handling & API Standards) to
- * cover every exception type across the whole application consistently.
- * For now it covers exactly what Phase 3 introduces: validation errors
- * and duplicate email registration attempts.
- *
- * Security note: no stack traces or internal exception messages are ever
- * returned to the client (OWASP: avoid leaking implementation details).
- */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -40,21 +30,34 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(DuplicateEmailException.class)
     public ResponseEntity<Map<String, Object>> handleDuplicateEmail(DuplicateEmailException ex) {
-        Map<String, Object> body = new LinkedHashMap<>();
-        body.put("success", false);
-        body.put("message", ex.getMessage());
-        body.put("errorCode", "EMAIL_ALREADY_EXISTS");
+        return errorResponse(HttpStatus.CONFLICT, ex.getMessage(), "EMAIL_ALREADY_EXISTS");
+    }
 
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(body);
+    @ExceptionHandler(InvalidCredentialsException.class)
+    public ResponseEntity<Map<String, Object>> handleInvalidCredentials(InvalidCredentialsException ex) {
+        return errorResponse(HttpStatus.UNAUTHORIZED, ex.getMessage(), "INVALID_CREDENTIALS");
+    }
+
+    @ExceptionHandler(AccountDisabledException.class)
+    public ResponseEntity<Map<String, Object>> handleAccountDisabled(AccountDisabledException ex) {
+        return errorResponse(HttpStatus.FORBIDDEN, ex.getMessage(), "ACCOUNT_DISABLED");
+    }
+
+    @ExceptionHandler(AccountLockedException.class)
+    public ResponseEntity<Map<String, Object>> handleAccountLocked(AccountLockedException ex) {
+        return errorResponse(HttpStatus.LOCKED, ex.getMessage(), "ACCOUNT_LOCKED");
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleGeneric(Exception ex) {
+        return errorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred", "INTERNAL_ERROR");
+    }
+
+    private ResponseEntity<Map<String, Object>> errorResponse(HttpStatus status, String message, String errorCode) {
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("success", false);
-        body.put("message", "An unexpected error occurred");
-        body.put("errorCode", "INTERNAL_ERROR");
-
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(body);
+        body.put("message", message);
+        body.put("errorCode", errorCode);
+        return ResponseEntity.status(status).body(body);
     }
 }
