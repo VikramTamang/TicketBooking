@@ -81,4 +81,20 @@ public class AuthController {
                 .status(HttpStatus.OK)
                 .body(ApiResponse.success("Access token issued successfully", response));
     }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<ApiResponse<AuthTokenResponse>> refresh(@Valid @RequestBody RefreshRequest request) {
+        AuthTokenResponse response = authService.refresh(request.getRefreshToken());
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(ApiResponse.success("Access token refreshed successfully", response));
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<ApiResponse<Void>> logout(@Valid @RequestBody LogoutRequest request) {
+        authService.logout(request.getRefreshToken());
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(ApiResponse.success("Logged out successfully"));
+    }
 }

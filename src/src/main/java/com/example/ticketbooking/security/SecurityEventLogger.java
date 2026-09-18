@@ -40,4 +40,16 @@ public class SecurityEventLogger {
     public void otpMaxAttemptsExceeded(String email) {
         log.warn("OTP_MAX_ATTEMPTS_EXCEEDED email={}", email);
     }
+
+    public void refreshTokenRotated(String email) {
+        log.info("REFRESH_TOKEN_ROTATED email={}", email);
+    }
+
+    public void refreshTokenReuseDetected(String email, String familyId) {
+        log.warn("REFRESH_TOKEN_REUSE_DETECTED email={} familyId={}", email, familyId);
+    }
+
+    public void refreshTokenRevoked(String email, String familyId) {
+        log.info("REFRESH_TOKEN_REVOKED email={} familyId={}", email, familyId);
+    }
 }

@@ -90,4 +90,19 @@ public class GlobalExceptionHandler {
         body.put("errorCode", errorCode);
         return ResponseEntity.status(status).body(body);
     }
+
+    @ExceptionHandler(RefreshTokenInvalidException.class)
+    public ResponseEntity<Map<String, Object>> handleRefreshTokenInvalid(RefreshTokenInvalidException ex) {
+        return errorResponse(HttpStatus.UNAUTHORIZED, ex.getMessage(), "REFRESH_TOKEN_INVALID");
+    }
+
+    @ExceptionHandler(RefreshTokenExpiredException.class)
+    public ResponseEntity<Map<String, Object>> handleRefreshTokenExpired(RefreshTokenExpiredException ex) {
+        return errorResponse(HttpStatus.UNAUTHORIZED, ex.getMessage(), "REFRESH_TOKEN_EXPIRED");
+    }
+
+    @ExceptionHandler(RefreshTokenReusedException.class)
+    public ResponseEntity<Map<String, Object>> handleRefreshTokenReused(RefreshTokenReusedException ex) {
+        return errorResponse(HttpStatus.UNAUTHORIZED, ex.getMessage(), "REFRESH_TOKEN_REUSED");
+    }
 }

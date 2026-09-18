@@ -37,6 +37,8 @@ public class AuthService {
     private final SecurityEventLogger securityEventLogger;
     private final OtpService otpService;
     private final JwtService jwtService;
+    private final RefreshTokenService refreshTokenService;
+
 
     @Value("${security.login.max-failed-attempts:5}")
     private int maxFailedAttempts;
@@ -62,6 +64,8 @@ public class AuthService {
         this.securityEventLogger = securityEventLogger;
         this.otpService = otpService;
         this.jwtService = jwtService;
+        this.refreshTokenService = refreshTokenService;
+
     }
 
     @Transactional
@@ -160,9 +164,21 @@ public class AuthService {
         pendingAuthSessionRepository.save(session);
 
         String accessToken = jwtService.generateAccessToken(session.getUser());
+        String refreshToken = refreshTokenService.issueNewFamily(session.getUser());
         securityEventLogger.loginSuccess(session.getUser().getEmail());
 
-        return new AuthTokenResponse(accessToken, jwtService.getAccessTokenTtlSeconds());
+        return new AuthTokenResponse(accessToken, refreshToken, jwtService.getAccessTokenTtlSeconds());
+    }
+
+    @Transactional
+    public AuthTokenResponse refresh(String rawRefreshToken) {
+        RefreshTokenService.RotationResult result = refreshTokenService.rotate(rawRefreshToken);
+        String newAccessToken = jwtService.generateAccessToken(result.user());
+        return new AuthTokenResponse(newAccessToken, result.newRawRefreshToken(), jwtService.getAccessTokenTtlSeconds());
+    }
+
+    public void logout(String rawRefreshToken) {
+        refreshTokenService.revokeFamilyByRawToken(rawRefreshToken);
     }
 
     private void handleFailedAttempt(User user) {
