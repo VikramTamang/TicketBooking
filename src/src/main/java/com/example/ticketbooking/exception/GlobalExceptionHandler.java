@@ -78,6 +78,11 @@ public class GlobalExceptionHandler {
         return errorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred", "INTERNAL_ERROR");
     }
 
+    @ExceptionHandler(SessionNotVerifiedException.class)
+    public ResponseEntity<Map<String, Object>> handleSessionNotVerified(SessionNotVerifiedException ex) {
+        return errorResponse(HttpStatus.FORBIDDEN, ex.getMessage(), "OTP_NOT_VERIFIED");
+    }
+
     private ResponseEntity<Map<String, Object>> errorResponse(HttpStatus status, String message, String errorCode) {
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("success", false);

@@ -18,6 +18,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import com.example.ticketbooking.dto.request.IssueTokenRequest;
+import com.example.ticketbooking.dto.response.AuthTokenResponse;
 
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -70,5 +72,13 @@ public class AuthController {
                 .status(HttpStatus.OK)
                 .body(ApiResponse.success("A new verification code has been sent.",
                         new ResendOtpResponse(otpExpiryMinutes * 60)));
+    }
+
+    @PostMapping("/token")
+    public ResponseEntity<ApiResponse<AuthTokenResponse>> issueToken(@Valid @RequestBody IssueTokenRequest request) {
+        AuthTokenResponse response = authService.issueAccessToken(request.getPendingAuthToken());
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(ApiResponse.success("Access token issued successfully", response));
     }
 }
